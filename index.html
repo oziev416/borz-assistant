@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BORZ - Голосовой помощник</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            font-weight: bold;
+            border: 3px solid #ff7b25;
+        }
+
+        h1 {
+            color: #ff7b25;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .action-btn {
+            padding: 15px 20px;
+            background: linear-gradient(45deg, #ff7b25, #ff6b6b);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .response { color: #4ecdc4; font-weight: 500; }
+        .error { color: #ff6b6b; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="avatar">B</div>
+        <h1>BORZ AI</h1>
+        <div class="status">Голосовой помощник</div>
+
+        <div class="button-group">
+            <button class="action-btn" onclick="openApp('youtube')">🎵 YouTube</button>
+            <button class="action-btn" onclick="openApp('google')">🔍 Google</button>
+            <button class="action-btn" onclick="openApp('wikipedia')">📚 Wikipedia</button>
+            <button class="action-btn" onclick="openApp('maps')">🗺️ Карты</button>
+        </div>
+
+        <div class="output" id="output">
+            Нажмите кнопку для действия
+        </div>
+    </div>
+
+    <script>
+        function openApp(appName) {
+            const urls = {
+                'youtube': 'https://www.youtube.com',
+                'google': 'https://www.google.com',
+                'wikipedia': 'https://ru.wikipedia.org',
+                'maps': 'https://maps.google.com'
+            };
+
+            const messages = {
+                'youtube': 'Открываю YouTube...',
+                'google': 'Открываю Google...',
+                'wikipedia': 'Открываю Wikipedia...',
+                'maps': 'Открываю Карты...'
+            };
+
+            document.getElementById('output').innerHTML =
+                `<span class="response">${messages[appName]}</span>`;
+
+            setTimeout(() => {
+                window.open(urls[appName], '_blank');
+            }, 500);
+        }
+
+        // Горячие клавиши
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '1') openApp('youtube');
+            if (e.key === '2') openApp('google');
+            if (e.key === '3') openApp('wikipedia');
+            if (e.key === '4') openApp('maps');
+        });
+    </script>
+</body>
+</html>
