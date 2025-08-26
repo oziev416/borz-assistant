@@ -74,6 +74,11 @@
             min-width: 140px;
         }
 
+        .voice-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            margin-top: 10px;
+        }
+
         .output {
             margin-top: 20px;
             padding: 15px;
@@ -87,6 +92,16 @@
 
         .response { color: #4ecdc4; font-weight: 500; }
         .error { color: #ff6b6b; font-weight: 500; }
+        .listening { 
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(45deg, #ff0000, #ff7b25) !important;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -102,12 +117,180 @@
             <button class="action-btn" onclick="openApp('maps')">🗺️ Карты</button>
         </div>
 
+        <button class="action-btn voice-btn" id="voiceBtn" onclick="toggleListening()">
+            🎤 Нажми и говори
+        </button>
+
         <div class="output" id="output">
-            Нажмите кнопку для действия
+            Нажми кнопку микрофона и говори
         </div>
     </div>
 
     <script>
+        // Инициализация голосового помощника
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
+        const SpeechSynthesisUtterance = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance;
+        
+        let recognition;
+        let isListening = false;
+        const voiceBtn = document.getElementById('voiceBtn');
+        const output = document.getElementById('output');
+
+        // Инициализация распознавания речи
+        function initSpeechRecognition() {
+            if (!SpeechRecognition) {
+                output.innerHTML = '<span class="error">Ваш браузер не поддерживает голосовой ввод</span>';
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ru-RU';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                isListening = true;
+                voiceBtn.classList.add('listening');
+                voiceBtn.innerHTML = '🔴 Слушаю...';
+                output.innerHTML = '<span class="response">Слушаю...</span>';
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                processCommand(transcript);
+            };
+
+            recognition.onerror = function(event) {
+                output.innerHTML = `<span class="error">Ошибка: ${event.error}</span>`;
+                stopListening();
+            };
+
+            recognition.onend = function() {
+                stopListening();
+            };
+        }
+
+        function toggleListening() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        function stopListening() {
+            isListening = false;
+            voiceBtn.classList.remove('listening');
+            voiceBtn.innerHTML = '🎤 Нажми и говори';
+        }
+
+        // Обработка команд
+        function processCommand(command) {
+            output.innerHTML = `<span class="response">Вы сказали: "${command}"</span>`;
+            
+            // Отклик на имя "BORZ"
+            if (command.includes('борз') || command.includes('borz') || command.includes('борс')) {
+                const responses = [
+                    "Да, я слушаю",
+                    "Я здесь",
+                    "Приветствую",
+                    "Чем могу помочь?",
+                    "Слушаю вас"
+                ];
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                speak(response);
+                return;
+            }
+
+            // Решение математических примеров
+            if (command.includes('сколько будет') || command.includes('посчитай') || 
+                command.includes('реши пример') || /[0-9]+\s*[\+\-\*\/]\s*[0-9]+/.test(command)) {
+                
+                let mathExpression = command
+                    .replace('сколько будет', '')
+                    .replace('посчитай', '')
+                    .replace('реши пример', '')
+                    .trim();
+
+                // Заменяем слова на математические операторы
+                mathExpression = mathExpression
+                    .replace('плюс', '+')
+                    .replace('минус', '-')
+                    .replace('умножить на', '*')
+                    .replace('умножить', '*')
+                    .replace('делить на', '/')
+                    .replace('делить', '/')
+                    .replace('x', '*')
+                    .replace('х', '*');
+
+                try {
+                    // Безопасное вычисление
+                    const result = eval(mathExpression);
+                    if (typeof result === 'number' && !isNaN(result)) {
+                        const response = `Результат: ${mathExpression} = ${result}`;
+                        output.innerHTML = `<span class="response">${response}</span>`;
+                        speak(response);
+                    } else {
+                        throw new Error('Неверное выражение');
+                    }
+                } catch (error) {
+                    const errorMsg = "Не могу решить этот пример";
+                    output.innerHTML = `<span class="error">${errorMsg}</span>`;
+                    speak(errorMsg);
+                }
+                return;
+            }
+
+            // Открытие приложений по голосовой команде
+            const appCommands = {
+                'ютуб': 'youtube',
+                'youtube': 'youtube',
+                'гугл': 'google',
+                'google': 'google',
+                'википедия': 'wikipedia',
+                'wikipedia': 'wikipedia',
+                'карты': 'maps',
+                'maps': 'maps'
+            };
+
+            for (const [key, app] of Object.entries(appCommands)) {
+                if (command.includes(key)) {
+                    openApp(app);
+                    return;
+                }
+            }
+
+            // Если команда не распознана
+            speak("Не понял команду. Попробуйте еще раз.");
+        }
+
+        // Функция синтеза речи с хриплым голосом
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ru-RU';
+                utterance.rate = 0.9; // Немного медленнее
+                utterance.pitch = 0.8; // Пониженный тон для хриплого эффекта
+                
+                // Попробуем найти более грубый голос
+                const voices = speechSynthesis.getVoices();
+                const russianVoices = voices.filter(voice => voice.lang.includes('ru'));
+                
+                if (russianVoices.length > 0) {
+                    // Выбираем голос с самым низким pitch
+                    utterance.voice = russianVoices[0];
+                }
+                
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Функции для открытия приложений
         function openApp(appName) {
             const urls = {
                 'youtube': 'https://www.youtube.com',
@@ -123,12 +306,12 @@
                 'maps': 'Открываю Карты...'
             };
 
-            document.getElementById('output').innerHTML =
-                `<span class="response">${messages[appName]}</span>`;
+            output.innerHTML = `<span class="response">${messages[appName]}</span>`;
+            speak(messages[appName]);
 
             setTimeout(() => {
                 window.open(urls[appName], '_blank');
-            }, 500);
+            }, 1000);
         }
 
         // Горячие клавиши
@@ -137,7 +320,15 @@
             if (e.key === '2') openApp('google');
             if (e.key === '3') openApp('wikipedia');
             if (e.key === '4') openApp('maps');
+            if (e.key === ' ') toggleListening(); // Пробел для активации микрофона
         });
+
+        // Инициализация при загрузке
+        window.onload = function() {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices(); // Инициализация голосов
+            }
+        };
     </script>
 </body>
 </html>
